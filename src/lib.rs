@@ -20,7 +20,7 @@ fn load_class_names(names_path: &str) -> anyhow::Result<Vec<String>> {
 }
 
 #[pyfunction]
-fn object_detection(folder_path: &str) -> anyhow::Result<()>{
+fn object_detection(folder_path: &str) -> PyResult<Vec<(String, Vec<String>)>>{
     let current_dir = env::current_dir()?;
     
     println!("Current working directory: {:?}", current_dir);
@@ -48,16 +48,20 @@ fn object_detection(folder_path: &str) -> anyhow::Result<()>{
     }).collect();
 
     // Parallelism
-    img_paths.par_iter().for_each(|img_path_str| {
-        if let Err(e) = process_image(img_path_str, &weights_str, &config_str, &class_names) {
-            eprintln!("Error processing image {}: {:?}", img_path_str, e);
+    let results: Vec<(String, Vec<String>)> = img_paths.par_iter().map(|img_path_str| {
+        match process_image(img_path_str, &weights_str, &config_str, &class_names) {
+            Ok(objects) => (img_path_str.clone(), objects),
+            Err(e) => {
+                eprintln!("Error processing image {}: {:?}", img_path_str, e);
+                (img_path_str.clone(), Vec::new())
+            }
         }
-    });
+    }).collect();
 
-    Ok(())
+    Ok(results)
 }
 
-fn process_image(img_path_str: &str, weights_str: &str, config_str: &str, class_names: &Arc<Vec<String>>) -> anyhow::Result<()> {
+fn process_image(img_path_str: &str, weights_str: &str, config_str: &str, class_names: &Arc<Vec<String>>) -> anyhow::Result<Vec<String>> {
     println!("Img_path_str: {}", img_path_str);
 
     let net = dnn::read_net(&weights_str, &config_str, "Darknet")?;
@@ -101,10 +105,13 @@ fn process_image(img_path_str: &str, weights_str: &str, config_str: &str, class_
     let color = core::Scalar {
         0: [0.0, 140.0, 255.0, 0.0], // Orange
     };
+
+    let mut detected_objects = Vec::new();
     for (cid, _cf, b) in izip!(&class_ids, &confidences, &boxes) {
         imgproc::rectangle_def(&mut resized_img, b, color)?;
 
         let label = &class_names[cid as usize];
+        detected_objects.push(label.clone());
         let label_size = imgproc::get_text_size(label, imgproc::FONT_HERSHEY_SIMPLEX, 0.5, 1, &mut 0)?;
         let label_origin = core::Point::new(b.x, b.y - label_size.height);
 
@@ -169,7 +176,7 @@ fn process_image(img_path_str: &str, weights_str: &str, config_str: &str, class_
     let _ = imgcodecs::imwrite(&output_file_path, &resized_img, &params);
         
     
-    Ok(())
+    Ok(detected_objects)
 }
 
 #[pymodule]
