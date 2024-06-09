@@ -1,0 +1,15 @@
+[package]
+name = "my-maturin-library"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "my_maturin_library"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.86"
+itertools = "0.13.0"
+opencv = "0.92.0"
+pyo3 = { version = "0.21.2", features = ["extension-module", "anyhow"] }
+rayon = "1.10.0"
