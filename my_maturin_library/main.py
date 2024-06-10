@@ -94,8 +94,8 @@ class ImageViewer:
         self.prev_button.pack(anchor='e', expand=True)
         self.next_button.pack(anchor='w', expand=True)
         self.folder_path = folder_path
-        self.outputs = (self.folder_path+"/outputs").replace("\\","/")
         if folder_path:
+            self.outputs = (self.folder_path+"/outputs").replace("\\","/")
             self.images = [os.path.join(folder_path, f).replace("\\","/") for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
             self.images.sort() 
             if self.images:
