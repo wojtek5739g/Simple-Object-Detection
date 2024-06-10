@@ -95,7 +95,6 @@ class ImageViewer:
         self.next_button.pack(anchor='w', expand=True)
         self.folder_path = folder_path
         if folder_path:
-            self.outputs = (self.folder_path+"/outputs").replace("\\","/")
             self.images = [os.path.join(folder_path, f).replace("\\","/") for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
             self.images.sort() 
             if self.images:
@@ -143,6 +142,7 @@ class ImageViewer:
 
     def detect_objects(self):
         if self.images:
+            self.outputs = (self.folder_path+"/outputs").replace("\\","/")
             self.clear_outputs()
             self.show_detect_button.config(state=tk.DISABLED)
             self.detect_button.config(state=tk.DISABLED)
